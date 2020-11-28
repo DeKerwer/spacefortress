@@ -14,3 +14,47 @@ general_server: Server
 general_back: Zurück
 general_crew_code: Crew Code
 general_start_game: Spiel Starten
+
+program_helm: Helm Control
+program_helm_eng: ENG
+program_helm_noengine: "FEHLER: NO ENGINE"
+program_helm_engoffline: "FEHLER: ENGINE OFFLINE"
+program_helm_autopilot: "** AUTOPILOT **"
+
+program_map: Map
+program_map_nosensor: "FEHLER: KEINE AKTIVEN SENSOREN"
+program_map_sensoroffline: "FEHLER: SENSOREN OFFLINE"
+
+program_terminal: Terminal
+program_terminal_notfound: command not found
+program_terminal_help: "folgende Befehle verfügbar:"
+program_terminal_exit: "FEHLER: exit funktioniert nur für Anwendungen mit Fenster"
+program_terminal_docking: "Andocken... fertig..."
+program_terminal_dockingerror: "Fehler: Dock-Sequenz kann nicht initiiert werden"
+program_terminal_undocking: "Abdocken... fertig.."
+program_terminal_undockingerror: "Fehler: Abdock-Sequenz kann nicht initiiert werden"
+program_terminal_nodockingmodule: "Andock-Modul nicht verfügbar"
+program_terminal_turnonline: "Starten alle Module..."
+program_terminal_turnoffline: "Herunterfahren aller Module..."
+program_terminal_killall: "Beenden aller Programme"
+program_terminal_nav: "Starte nav..."
+program_terminal_sensors: "Starte Sensoren..."
+program_terminal_offensive: "Starte Verteidigung..."
+program_terminal_newprog_error: "Fehler, zu viele Programme auf einmal Geöffnet!"
+
+program_smon: Status Monitor
+program_smon_reg: "#"
+program_smon_hul: "H"
+program_smon_sld: "S"
+program_smon_enr: "E"
+program_smon_mod: "M"
+program_smon_installed: installed
+program_smon_docked: "**Angedockt**"
+
+program_sensor: Sensors
+
+program_offensive: Offensive
+program_offensive_weapons: "Waffen:"
+program_offensive_weapons_error: "KEINE WAFFEN MODULE GEFUNDEN"
+program_offensive_tgt: "Ziel:"
+program_offensive_none: "Nichts"
