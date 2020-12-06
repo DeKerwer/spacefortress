@@ -5,7 +5,8 @@ InputText::InputText(int x, int y, std::string label)
       selected(false),
       cursor_pos(0),
       width(20),
-      label(label) {}
+      label(label),
+      filler("_") {}
 
 void InputText::render(ConsoleKey key) {
   // calc start positions
@@ -23,13 +24,13 @@ void InputText::render(ConsoleKey key) {
 
   // format output str
   std::string output = this->value;
-  while (output.length() < this->width) {
-    output += "_";
+  while (output.length() < this->width && this->filler.length() > 0) {
+    output += filler;
   }
   output = this->label + output;
 
   // render
-  mvprintw(start_y, start_x, output.c_str());
+  mvwprintw(this->win, start_y, start_x, output.c_str());
 }
 
 void InputText::processInput(ConsoleKey key) {
@@ -39,13 +40,13 @@ void InputText::processInput(ConsoleKey key) {
   // add chars
   if (this->value.length() < this->width) {
     // - . _ : SP
-    if (ikey >= 45 && ikey <= 46 || ikey >= 48 && ikey <= 57 || ikey == 58 ||
+    if ((ikey >= 45 && ikey <= 46) || (ikey >= 48 && ikey <= 57) || ikey == 58 ||
         ikey == 95 || ikey == 32) {
       this->value += ikey;
       this->cursor_pos++;
     }
     // A - z
-    if (ikey >= 65 && ikey <= 90 || ikey >= 97 && ikey <= 122) {
+    if ((ikey >= 65 && ikey <= 90) || (ikey >= 97 && ikey <= 122)) {
       this->value += ikey;
       this->cursor_pos++;
     }
@@ -53,7 +54,8 @@ void InputText::processInput(ConsoleKey key) {
 
   // delete characters
   if (this->value.length() > 0) {
-    if (key == ConsoleKey::BACKSPACE && this->cursor_pos > 0) {
+    if ((key == ConsoleKey::BACKSPACE || key == ConsoleKey::BACKSPACE2) &&
+        this->cursor_pos > 0) {
       this->value = this->value.substr(0, this->cursor_pos - 1) +
                     this->value.substr(this->cursor_pos);
       this->cursor_pos--;
@@ -76,4 +78,9 @@ void InputText::processInput(ConsoleKey key) {
       this->cursor_pos = this->value.length();
     }
   }
+}
+
+void InputText::setValue(std::string s) {
+  this->value = s;
+  this->cursor_pos = s.length();
 }

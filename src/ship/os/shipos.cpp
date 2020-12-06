@@ -1,37 +1,70 @@
 #include "shipos.hpp"
 
-ShipOs::ShipOs(Ship *ship) : ship(ship), state(ShipOsState::OFF) {}
+ShipOs::ShipOs(Ship *ship) : ship(ship), state(ShipOsState::OFF) {
+  this->main_terminal = 0;
+}
 
+/**
+ * removing all remaining heap classes from memory
+ */
 ShipOs::~ShipOs() {
-  for (size_t i = 0; i < this->v_programs.size(); i++) {
-    delete v_programs[i];
+  for (const auto &program : this->v_programs) {
+    delete program;
   }
   v_programs.clear();
 
-  for (size_t i = 0; i < this->v_windows.size(); i++) {
-    delete v_windows[i];
+  // main terminal
+  if (this->main_terminal != 0) {
+    delete this->main_terminal;
+    this->main_terminal = 0;
   }
-  v_windows.clear();
 }
 
 void ShipOs::boot() {
   this->state = ShipOsState::BOOTING;
   this->boot_time = std::chrono::steady_clock::now();
-
-  Window *w1 = new Window(WindowAlignment::RIGHT, 0.3);
-  w1->setTitle("Ship status: Omega");
-  this->addWindow(w1);
-  this->addProgram(new shipos::StatusMonitor(w1->getWin(), this->ship));
-
-  Window *w2 = new Window(WindowAlignment::LEFT, 0.7);
-  w2->setTitle("Ship status: Omega");
-  this->addWindow(w2);
-  this->addProgram(new shipos::StatusMonitor(w2->getWin(), this->ship));
 }
 
+/**
+ * Autostarts default programs
+ */
+void ShipOs::autostart() {
+  Console::sclear();
+
+  // background terminal
+  this->main_terminal = new shipos::Terminal(this->ship, &(this->v_programs));
+  this->main_terminal->setState(shipos::ProgramState::HALT);
+
+  // nav overview programs
+  this->addProgram(new shipos::Map(this->ship, WindowAlignment::LEFT,
+                                   WindowAlignment::TOP, 0.7, 1.0));
+  this->addProgram(new shipos::StatusMonitor(this->ship, WindowAlignment::RIGHT,
+                                             WindowAlignment::TOP, 0.3, 0.5));
+  this->addProgram(new shipos::Helm(this->ship, WindowAlignment::RIGHT,
+                                    WindowAlignment::BOTTOM, 0.3, 0.5));
+}
+
+/**
+ * Render the main window - (Terminal)
+ * @param key Console Key
+ */
 void ShipOs::render(ConsoleKey key) {
+  // check ship status
+  if (this->ship == nullptr || !this->ship->isAlive()) {
+    this->ship = nullptr;
+    Console::sclear();
+    printw("your ship has been destroyed");
+    return;
+  }
+
   if (this->state == ShipOsState::BOOTING) {
-    this->renderBoot();
+    this->renderBoot(key);
+  }
+  if (this->state == ShipOsState::RUNNING) {
+    if (this->main_terminal != 0 &&
+        this->main_terminal->getState() == shipos::ProgramState::RUN) {
+      this->main_terminal->render(key);
+    }
   }
 }
 
@@ -40,14 +73,43 @@ void ShipOs::render(ConsoleKey key) {
  * @param key [description]
  */
 void ShipOs::renderWin(ConsoleKey key) {
+  if (this->ship == nullptr) return;
+
+  // render programs
   if (this->state == ShipOsState::RUNNING) {
-    for (size_t i = 0; i < this->v_programs.size(); i++) {
-      v_programs[i]->render(key);
+    for (const auto &program : this->v_programs) {
+      if (program->getState() == shipos::ProgramState::RUN) {
+        program->render(key);
+      }
     }
-    for (size_t i = 0; i < this->v_windows.size(); i++) {
-      v_windows[i]->render(key);
+
+    // tab control - hide and show programs
+    if (key == ConsoleKey::TAB) {
+      auto pstate = shipos::ProgramState::HALT;
+      auto wstate = WindowState::HIDDEN;
+      if (this->main_terminal->getState() != pstate &&
+          this->v_programs.size() > 0) {
+        // restore windows, block background terminal
+        // only do this when there are actually open windows to display
+        pstate = shipos::ProgramState::RUN;
+        wstate = WindowState::VISIBLE;
+        this->main_terminal->setState(shipos::ProgramState::HALT);
+      } else {
+        // hide windows, run terminal
+        this->main_terminal->setState(shipos::ProgramState::RUN);
+        Console::sclear();
+      }
+      for (size_t i = 0; i < this->v_programs.size(); i++) {
+        this->v_programs[i]->setState(pstate);
+        this->v_programs[i]->setWinState(wstate);
+      }
     }
   }
+
+  if (key != ConsoleKey::NONE) Log::info("Key: " + std::to_string((int)key));
+
+  // at the end
+  this->garbageCollector();
 }
 
 /**
@@ -63,52 +125,78 @@ double ShipOs::getUptime() {
   return uptime;
 }
 
-void ShipOs::renderBoot() {
+void ShipOs::renderBoot(ConsoleKey key) {
   double uptime = this->getUptime();
-
-  if (uptime < 4.0) {
-    if (uptime > 0.0) printw("OMEGON (C) 2218 Systems Inc.\n");
-    if (uptime > 0.1) printw("BIOS Date 20-11-23 Ver.: 1.5.18\n");
-    if (uptime > 0.2) printw("CPU: Xyntix R9 CPU @ 81 GHz\n");
-    if (uptime > 0.2) printw("\n");
-
-    if (uptime > 0.3) printw("Memory Test: ");
-    if (uptime > 1.3) printw("8 TB OK\n");
-    if (uptime > 1.4) printw("Initializing Hardware: ");
-    if (uptime > 1.9) printw("182 Modules OK\n");
-    if (uptime > 2.0) printw("\n");
-
-    if (uptime > 2.1) printw("Loading Bootloader");
-    if (uptime > 2.6) printw(".");
-    if (uptime > 3.1) printw(".");
-    if (uptime > 3.6) printw(".");
+  static size_t drawline = 0;
+  static double lastuptime = uptime;
+  if (uptime - lastuptime >= 0.1 || key == ConsoleKey::SPACE) {
+    drawline++;
+    lastuptime = uptime;
+  } else {
+    return;
   }
-  if (uptime > 4.0 && uptime < 9.9) {
-    if (uptime > 4.0) printw("ShipOs " SHIPOS_VERSION "\n");
-    if (uptime > 4.1)
-      printw("Welcome to ShipOs " SHIPOS_VER " (" SHIPOS_NAME ")!\n");
-    if (uptime > 4.2) printw("\n");
 
-    if (uptime > 4.5) printw("Entering non-interactive startup\n");
-    if (uptime > 4.5) printw("Applying CPU microcode updates\n");
-    if (uptime > 4.6) printw("Checking for hardware changes\n");
-    if (uptime > 4.7) printw("Bridging up eth0 interface\n");
-    if (uptime > 4.7) printw("Determing IP information for eth0");
-    if (uptime > 5.0) printw(".");
-    if (uptime > 5.3) printw(".\n\n");
+  if (drawline == 1) Console::sclear();
+  if (drawline == 1) mvprintw(0, 0, "OMEGON (C) 2218 Systems Inc.");
+  if (drawline == 2) mvprintw(1, 0, "BIOS Date 20-11-23 Ver.: 1.5.18");
+  if (drawline == 3) mvprintw(2, 0, "CPU: Xyntix R9 CPU @ 81 GHz");
 
-    if (uptime > 5.4) printw("Starting audit\n");
-    if (uptime > 5.5) printw("Starting restorecond\n");
-    if (uptime > 5.6) printw("Starting system logger\n");
-    if (uptime > 5.7) printw("Starting kernel logger\n");
-    if (uptime > 5.8) printw("Starting portmap\n");
-    if (uptime > 5.9) printw("Starting quantumd\n");
-    if (uptime > 6.0) printw("Starting subsystems");
-    if (uptime > 7.0) printw(".");
-    if (uptime > 8.0) printw(".");
-    if (uptime > 9.0) printw(".");
-  }
+  if (drawline == 4) mvprintw(4, 0, "Memory Test: ");
+  if (drawline == 13) mvprintw(4, 13, "8 TB OK");
+  if (drawline == 14) mvprintw(5, 0, "Initializing Hardware: ");
+  if (drawline == 19) mvprintw(5, 23, "182 Modules OK");
+
+  if (drawline == 21) mvprintw(7, 0, "Loading Bootloader");
+  if (drawline == 26) printw(".");
+  if (drawline == 31) printw(".");
+  if (drawline == 36) printw(".");
+
+  if (drawline == 40) Console::sclear();
+
+  if (drawline == 40) mvprintw(0, 0, "ShipOs " SHIPOS_VERSION "");
+  if (drawline == 41)
+    mvprintw(1, 0, "Welcome to ShipOs " SHIPOS_VER " (" SHIPOS_NAME ")!");
+
+  if (drawline == 45) mvprintw(3, 0, "Entering non-interactive startup");
+  if (drawline == 45) mvprintw(4, 0, "Applying CPU microcode updates");
+  if (drawline == 46) mvprintw(5, 0, "Checking for hardware changes");
+  if (drawline == 47) mvprintw(6, 0, "Bridging up eth0 interface");
+  if (drawline == 47) mvprintw(7, 0, "Determing IP information for eth0");
+  if (drawline == 50) printw(".");
+  if (drawline == 53) printw(".");
+
+  if (drawline == 54) mvprintw(9, 0, "Starting audit");
+  if (drawline == 55) mvprintw(10, 0, "Starting restorecond");
+  if (drawline == 56) mvprintw(11, 0, "Starting system logger");
+  if (drawline == 57) mvprintw(12, 0, "Starting kernel logger");
+  if (drawline == 58) mvprintw(13, 0, "Starting portmap");
+  if (drawline == 59) mvprintw(14, 0, "Starting quantumd");
+  if (drawline == 60) mvprintw(15, 0, "Starting subsystems");
+  if (drawline == 70) printw(".");
+  if (drawline == 80) printw(".");
+  if (drawline == 90) printw(".");
 
   // finish boot sequence
-  if (uptime > 10.0) this->state = ShipOsState::RUNNING;
+  if (drawline == 100 || key == ConsoleKey::SPACE) {
+    this->state = ShipOsState::RUNNING;
+    this->autostart();
+  }
+}
+
+/**
+ * Collects terminated programs and removes them from Memory
+ * Also closes empty windows
+ */
+void ShipOs::garbageCollector() {
+  auto it = this->v_programs.begin();
+  while (it != this->v_programs.end()) {
+    if ((*it)->getState() == shipos::ProgramState::TERM) {
+      delete *it;
+      it = this->v_programs.erase(it);
+
+      // Console::sclear();
+    } else {
+      it++;
+    }
+  }
 }

@@ -26,6 +26,12 @@ void startGame(void) {
     pgame->start();
   }
 }
+void stopGame(void) {
+  main_state = MAIN_MENU;
+  if (pgame != 0) {
+    pgame->stop();
+  }
+}
 void backToMenu(void) { main_state = MAIN_MENU; }
 
 /**
@@ -44,13 +50,12 @@ int main() {
   //////////////////////////////////////////////
   // MENU SETUP
   Menu main_menu;
-  auto main_menu_1 =
-      MenuItem(0, -1, Lang::get("menu_create_crew"), &startCrewCreate);
-  auto main_menu_2 =
-      MenuItem(0, 0, Lang::get("menu_join_crew"), &startCrewJoin);
+  auto main_menu_1 = MenuItem(0, 0, Lang::get("menu_create_crew"), &startGame);
+  // auto main_menu_2 = MenuItem(0, 0, Lang::get("menu_join_crew"),
+  // &startCrewJoin);
   auto main_menu_3 = MenuItem(0, 1, Lang::get("menu_exit"), &endProgram);
   main_menu.addSelectable(&main_menu_1);
-  main_menu.addSelectable(&main_menu_2);
+  // main_menu.addSelectable(&main_menu_2);
   main_menu.addSelectable(&main_menu_3);
 
   Menu create_menu;
@@ -102,9 +107,6 @@ int main() {
   ConsoleKey key = ConsoleKey::NONE;
   Console::sclear();
   while (p_running) {
-    // clear window
-    Console::sclear();
-
     // render main console
     switch (main_state) {
       case MAIN_MENU:
@@ -135,12 +137,6 @@ int main() {
     // keyboard actions
     timeout(100);
     key = console.getKey();
-
-    // abort condition
-    if (key == ConsoleKey::KEY_Q) {
-      endProgram();
-    }
   }
-
   return 0;
 }

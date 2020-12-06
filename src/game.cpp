@@ -1,33 +1,88 @@
 #include "game.hpp"
 
-Game::Game() : s("Omega", 100), os(&s) {
-  this->s.addModule(new Generator("Generator MK I", 1, 1));
-  this->s.addModule(new ShieldGenerator("Shield Generator MK I", 1, 0.5, 1));
-  this->s.addModule(new ShieldGenerator("Engine MK I", 1, 1, 1));
-  this->s.addModule(new Capacitor("Capacitor MK I", 1, 100, 1, 10));
+Game::Game() : running(false) { Log::info("game module loaded"); }
 
-  Log::info("game module loaded");
+/**
+ * game objects are auto freed
+ */
+Game::~Game() {}
+
+/**
+ * main loading function
+ */
+void Game::createGameWorld() {
+  this->running = true;
+
+  // add playership
+  auto playership = std::make_shared<Ship>("Omega", 100, &game_objects);
+  playership->setPos(Vec2(-1, 0.1));
+  playership->addStandardModules();
+  this->pshipos = std::make_shared<ShipOs>(playership.get());
+  this->pship = playership;
+  this->game_objects.push_back(playership);
+
+  // add planets
+  this->game_objects.push_back(std::make_shared<go::Planet>("Rix", 1, 1));
+  this->game_objects.push_back(std::make_shared<go::Planet>("Lira", 2, -1));
+  this->game_objects.push_back(std::make_shared<go::Planet>("Omecron", -3, 0));
+  this->game_objects.push_back(std::make_shared<go::Planet>("Deca", -4, -2));
+  this->game_objects.push_back(std::make_shared<go::Planet>("Zyppr", 5, 2));
+
+  // add star
+  this->game_objects.push_back(std::make_shared<go::Star>("Mycra", 0, 0));
+
+  // add Station
+  this->game_objects.push_back(
+      std::make_shared<go::Station>("Mycra Outpost", -1, 0));
+
+  // add some other ships
+  std::default_random_engine generator;
+  std::uniform_real_distribution<double> distribution(-8.0, 8.0);
+  for (int i = 0; i < 5; i++) {
+    auto friendly_ship = std::make_shared<Ship>("Camera", 100, &game_objects);
+    friendly_ship->setPos(
+        Vec2(distribution(generator), distribution(generator)));
+    friendly_ship->addStandardModules();
+    friendly_ship->addModule(new module::ShipAi("Ship AI", 1));
+    this->game_objects.push_back(friendly_ship);
+  }
+
+  Log::info("game objects created");
 }
 
 void Game::start() {
-  this->os.boot();
+  this->createGameWorld();
+  this->pshipos->boot();
   Log::info("game start");
 }
 
-void Game::render(ConsoleKey key) {
-  double sim_time = this->calcSimTime();
-  this->s.simulate(sim_time);
-
-  this->os.render(key);
-
-  /*if (this->os.getState() == ShipOsState::RUNNING) {
-    this->s.info();
-    printw("Simulating %f seconds\n", sim_time);
-    printw("\nPress q to exit...\n");
-  }*/
+/**
+ * cleanup game memory
+ */
+void Game::stop() {
+  this->running = false;
+  this->pshipos.reset();
+  this->game_objects.clear();
+  Log::info("game stop");
 }
 
-void Game::renderWin(ConsoleKey key) { this->os.renderWin(key); }
+void Game::render(ConsoleKey key) {
+  // simulate
+  double sim_time = this->calcSimTime();
+  for (const auto &gobject : this->game_objects) {
+    gobject->simulate(sim_time);
+  }
+
+  // render
+  this->pshipos->render(key);
+}
+
+void Game::renderWin(ConsoleKey key) {
+  this->pshipos->renderWin(key);
+
+  // garbage collector
+  this->garbageCollector();
+}
 
 double Game::calcSimTime() {
   static auto last_start_time = std::chrono::steady_clock::now();
@@ -39,4 +94,19 @@ double Game::calcSimTime() {
   last_start_time = start_time;
 
   return sim_time;
+}
+
+/**
+ * Searches for dead game objects and removes them from game
+ */
+void Game::garbageCollector() {
+  auto it = this->game_objects.begin();
+  while (it != this->game_objects.end()) {
+    // is dead object?
+    if (!(*it)->isAlive()) {
+      it = this->game_objects.erase(it);
+    } else {
+      it++;
+    }
+  }
 }

@@ -4,13 +4,17 @@
 #include <string>
 #include <vector>
 
+#include "../../gameobject.hpp"
 #include "../../tools/console.hpp"
 #include "../../ui/window.hpp"
 #include "../ship.hpp"
+#include "helm.hpp"
+#include "map.hpp"
 #include "program.hpp"
 #include "statusmonitor.hpp"
+#include "terminal.hpp"
 
-#define SHIPOS_VERSION "v0.1.1"
+#define SHIPOS_VERSION "v0.2.4"
 #define SHIPOS_VER "1"
 #define SHIPOS_NAME "Rusty Leopard"
 
@@ -24,11 +28,11 @@ class ShipOs {
   ShipOs(Ship *ship);
   ~ShipOs();
   void boot();
+  void autostart();
   void render(ConsoleKey key);
   void renderWin(ConsoleKey key);
   double getUptime();
   ShipOsState getState() { return this->state; }
-  void addWindow(Window *win) { this->v_windows.push_back(win); }
   void addProgram(shipos::Program *prog) { this->v_programs.push_back(prog); }
 
  private:
@@ -37,8 +41,9 @@ class ShipOs {
 
   std::chrono::time_point<std::chrono::steady_clock> boot_time;
 
-  std::vector<Window *> v_windows;
   std::vector<shipos::Program *> v_programs;
+  shipos::Program *main_terminal;
 
-  void renderBoot();
+  void renderBoot(ConsoleKey key);
+  void garbageCollector();
 };

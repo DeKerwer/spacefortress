@@ -14,3 +14,47 @@ general_server: Server
 general_back: Back
 general_crew_code: Crew Code
 general_start_game: Start Game
+
+program_helm: Helm Control
+program_helm_eng: ENG
+program_helm_noengine: "ERROR: NO ENGINE"
+program_helm_engoffline: "ERROR: ENGINE OFFLINE"
+program_helm_autopilot: "** AUTOPILOT **"
+
+program_map: Map
+program_map_nosensor: "ERROR: NO ACTIVE SENSOR"
+program_map_sensoroffline: "ERROR: SENSOR OFFLINE"
+
+program_terminal: Terminal
+program_terminal_notfound: command not found
+program_terminal_help: "following commands available:"
+program_terminal_exit: "ERROR: exit only works for windowed applications"
+program_terminal_docking: "docking... done..."
+program_terminal_dockingerror: "error: can not initiate docking sequence"
+program_terminal_undocking: "undocking... done.."
+program_terminal_undockingerror: "error: can not initiate undocking sequence"
+program_terminal_nodockingmodule: "Docking module not available"
+program_terminal_turnonline: "starting all modules..."
+program_terminal_turnoffline: "shutting down all modules..."
+program_terminal_killall: "Terminating all programs"
+program_terminal_nav: "starting nav..."
+program_terminal_sensors: "starting sensors..."
+program_terminal_offensive: "starting offensive..."
+program_terminal_newprog_error: "Error, too many programs open at once"
+
+program_smon: Status Monitor
+program_smon_reg: "#"
+program_smon_hul: "H"
+program_smon_sld: "S"
+program_smon_enr: "E"
+program_smon_mod: "M"
+program_smon_installed: installed
+program_smon_docked: "**docked**"
+
+program_sensor: Sensors
+
+program_offensive: Offensive
+program_offensive_weapons: "Weapons:"
+program_offensive_weapons_error: "NO WEAPON MODULES FOUND"
+program_offensive_tgt: "Target:"
+program_offensive_none: "NONE"

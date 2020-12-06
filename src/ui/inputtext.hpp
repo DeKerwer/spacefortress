@@ -1,4 +1,6 @@
 #pragma once
+#include <ncurses.h>
+
 #include <cmath>
 #include <string>
 
@@ -13,9 +15,12 @@ class InputText : public UiElement {
  public:
   InputText(int x, int y, std::string label);
   void render(ConsoleKey key);
+  void setFiller(std::string f) { this->filler = f; }
+  void setSelected(bool s) { this->selected = s; }
+  std::string getValue() { return this->value; }
+  void setValue(std::string s);
   void beforeFocus() {
     this->selected = true;
-    curs_set(1);
     Console::showCursor(true);
   }
   void afterFocus() {
@@ -30,6 +35,7 @@ class InputText : public UiElement {
 
   std::string label;
   std::string value;
+  std::string filler;
 
   void processInput(ConsoleKey key);
   using UiElement::calcDrawOffset;

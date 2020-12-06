@@ -12,7 +12,7 @@ void Text::setPosition(int x, int y, UiAlignment align_x, UiAlignment align_y,
   this->align_text = align_text;
 }
 
-void Text::addTextLine(std::string line) {
+void Text::addTextLine(const std::string& line) {
   textlines.push_back(line);
   this->text_size = fmax(line.length(), this->text_size);
 }
@@ -35,6 +35,9 @@ void Text::render(ConsoleKey key) {
         break;
       case (RIGHT):
         dx = -this->textlines[i].length();
+        break;
+      default:
+        // do nothing
         break;
     }
 

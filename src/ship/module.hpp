@@ -3,27 +3,30 @@
 
 class Ship;
 
-enum ModuleType {
-  ACTIVE,    // active energy drawing module
-  PASSIVE,   // passive module - no energy needed
-  GENERATOR  // generator - generates energy
-};
-
 class Module {
  public:
+  Module(const std::string &name, const std::string &type, double hull);
+  virtual ~Module() {}
+
+  // info funcitons
+  bool isOnline() { return this->online; }
+  void setOnline(bool o) { this->online = o; }
+  std::string getName() { return this->name; }
+  std::string getType() { return this->type; }
+  double getEnergyAvbl() { return this->energy_available; }
+
+  // manipulation
+  virtual void simulate(double delta_time, Ship *ship){};
+  virtual double getEnergy(double energy_needed);
+
+ protected:
   bool online;
   std::string name;
-  ModuleType type;
+  std::string type;
 
   double hull;
   double max_hull;
 
-  double max_capacity;
   double energy_available;
   double energy_needed;
-
-  Module(std::string name, double hull, ModuleType type);
-  virtual void simulate(double delta_time, Ship *ship){};
-
-  double getEnergy(double energy_needed);
 };

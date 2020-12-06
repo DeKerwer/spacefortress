@@ -1,12 +1,15 @@
 #pragma once
 
 #include "../../tools/console.hpp"
+#include "../../tools/lang.hpp"
 #include "program.hpp"
 
 namespace shipos {
 class StatusMonitor : public Program {
  public:
-  StatusMonitor(WINDOW* win, Ship* ship);
+  StatusMonitor(Ship* ship);
+  StatusMonitor(Ship* ship, WindowAlignment alignment_x,
+                WindowAlignment alignment_y, double size_x, double size_y);
   void render(ConsoleKey key);
 
  private:
